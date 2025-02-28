@@ -27,13 +27,13 @@ export default function Home() {
           <GameCard
             title="Nine Men's Morris"
             description="A strategic board game for two players dating back to the Roman Empire"
-            image="/nmm.png"
+            image="./nmm.png"
             href="/games/nine-mens-morris"
           />
           <GameCard
             title="Gomoku"
             description="Also known as Five in a Row, a classic strategy game played on a Go board"
-            image="/gomoku.png"
+            image="./gomoku.png"
             href="/games/gomoku"
           />
         </div>

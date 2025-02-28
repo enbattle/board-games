@@ -1,124 +1,106 @@
-// scripts/deploy.js
+// scripts/deploy-gh-pages.js
 const { execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
 // Configuration
-const ghPagesDir = "out";
-const ghPagesBranch = "gh-pages";
+const outputDir = "out";
 
-// Colors for console output
-const colors = {
-  reset: "\x1b[0m",
-  green: "\x1b[32m",
-  yellow: "\x1b[33m",
-  red: "\x1b[31m",
-};
+console.log("🚀 Starting GitHub Pages deployment...");
 
-// Helper function to execute commands and log output
-function runCommand(command) {
-  console.log(`${colors.yellow}> ${command}${colors.reset}`);
+try {
+  // 1. Make sure we're in a git repository
   try {
-    return execSync(command, { stdio: "inherit" });
-  } catch (error) {
-    console.error(`${colors.red}Command failed: ${command}${colors.reset}`);
+    execSync("git rev-parse --is-inside-work-tree", { stdio: "ignore" });
+  } catch (e) {
+    console.error("❌ Error: This directory is not a Git repository.");
+    console.log("Please run this script from the root of your Git repository.");
     process.exit(1);
   }
-}
 
-// Main deployment function
-async function deploy() {
+  // 2. Check if origin remote exists
+  let remoteExists = false;
   try {
-    console.log(
-      `\n${colors.green}Starting deployment to GitHub Pages...${colors.reset}\n`
-    );
-
-    // Ensure the out directory exists
-    if (!fs.existsSync(ghPagesDir)) {
-      console.error(
-        `${colors.red}Error: '${ghPagesDir}' directory not found. Run 'next build' first.${colors.reset}`
-      );
-      process.exit(1);
-    }
-
-    // Create .nojekyll file to disable Jekyll processing
-    const nojekyllPath = path.join(ghPagesDir, ".nojekyll");
-    if (!fs.existsSync(nojekyllPath)) {
-      console.log(`${colors.yellow}Creating .nojekyll file...${colors.reset}`);
-      fs.writeFileSync(nojekyllPath, "");
-    }
-
-    // Store the current working directory
-    const originalDir = process.cwd();
-
-    // Check if gh-pages branch exists locally
-    const localBranchExists =
-      fs.existsSync(".git") &&
-      execSync("git branch --list gh-pages").toString().trim() !== "";
-
-    // Check if gh-pages branch exists remotely
-    const remoteBranchExists =
-      execSync("git ls-remote --heads origin gh-pages").toString().trim() !==
-      "";
-
-    // If we're going to reuse an existing branch, first create a clean orphan branch
-    if (remoteBranchExists) {
-      console.log(
-        `\n${colors.yellow}Cleaning existing gh-pages branch...${colors.reset}`
-      );
-
-      // Create a temporary directory
-      const tempDir = path.join(originalDir, "temp_gh_pages");
-      if (fs.existsSync(tempDir)) {
-        fs.rmSync(tempDir, { recursive: true, force: true });
-      }
-      fs.mkdirSync(tempDir);
-      process.chdir(tempDir);
-
-      // Clone only the gh-pages branch to clean it
-      runCommand("git init");
-      runCommand(
-        "git remote add origin " +
-          execSync("git config --get remote.origin.url", { cwd: originalDir })
-            .toString()
-            .trim()
-      );
-
-      // Create an orphan branch (no history) and clear all content
-      runCommand("git checkout --orphan gh-pages");
-      runCommand("git rm -rf . || true"); // Remove all files, but don't fail if empty
-
-      // Create an empty commit and push to reset the branch
-      runCommand('git commit --allow-empty -m "Clean gh-pages branch"');
-      runCommand("git push -f origin gh-pages");
-
-      // Go back and clean up
-      process.chdir(originalDir);
-      fs.rmSync(tempDir, { recursive: true, force: true });
-    }
-
-    // Initialize Git in the output directory
-    console.log(`\n${colors.green}Preparing deployment...${colors.reset}`);
-    process.chdir(ghPagesDir);
-
-    // Initialize a new git repo in the out directory
-    runCommand("git init");
-    runCommand("git add -A");
-    runCommand(`git commit -m "Deploy to GitHub Pages"`);
-
-    // Force push to the gh-pages branch (will overwrite any existing content)
-    runCommand("git checkout -b gh-pages");
-    runCommand(`git push -f origin gh-pages`);
-
-    console.log(
-      `\n${colors.green}✅ Successfully deployed to GitHub Pages!${colors.reset}`
-    );
-    process.chdir("..");
-  } catch (error) {
-    console.error(`\n${colors.red}Deployment failed:${colors.reset}`, error);
+    execSync("git remote get-url origin", { stdio: "ignore" });
+    remoteExists = true;
+  } catch (e) {
+    console.error('❌ Error: No "origin" remote found in this Git repository.');
+    console.log("Please add a remote with:");
+    console.log("  git remote add origin https://github.com/username/repo.git");
     process.exit(1);
   }
-}
 
-// Run the deployment
-deploy();
+  // 3. Get remote URL if it exists
+  const remoteUrl = execSync("git remote get-url origin").toString().trim();
+  console.log(`\n🔗 Using repository: ${remoteUrl}`);
+
+  // 4. Build the project
+  console.log("\n📦 Building Next.js project...");
+  execSync("npm run build", { stdio: "inherit" });
+
+  // 5. Add .nojekyll file
+  console.log("\n🔧 Adding .nojekyll file...");
+  fs.writeFileSync(path.join(outputDir, ".nojekyll"), "");
+
+  // 6. Create a temporary directory for the gh-pages branch
+  const tempDir = path.join(process.cwd(), "temp_gh_pages");
+  if (fs.existsSync(tempDir)) {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+  fs.mkdirSync(tempDir);
+
+  // 7. Copy build output to the temporary directory
+  console.log("\n📋 Copying build output...");
+  fs.cpSync(outputDir, tempDir, { recursive: true });
+
+  // 8. Initialize a new git repo in the temporary directory
+  console.log("\n🔧 Setting up deployment repository...");
+  process.chdir(tempDir);
+  execSync("git init", { stdio: "ignore" });
+  execSync(`git remote add origin ${remoteUrl}`, { stdio: "ignore" });
+
+  // 9. Create and commit the gh-pages content
+  execSync("git add --all", { stdio: "inherit" });
+  execSync('git commit -m "Deploy to GitHub Pages"', { stdio: "ignore" });
+
+  // 10. Create a new branch and force-push to gh-pages
+  console.log("\n📤 Pushing to gh-pages branch...");
+  execSync("git checkout -b gh-pages", { stdio: "ignore" });
+
+  try {
+    // Try to push (this might fail if credentials aren't set up)
+    execSync("git push -f origin gh-pages", { stdio: "inherit" });
+  } catch (error) {
+    console.error("\n❌ Push failed. Please check your GitHub credentials.");
+    console.log("\nYou might need to set up authentication with GitHub:");
+    console.log("1. Use HTTPS with a personal access token:");
+    console.log(
+      "   git remote set-url origin https://USERNAME:TOKEN@github.com/username/repo.git"
+    );
+    console.log("2. Or use SSH if you have that configured:");
+    console.log(
+      "   git remote set-url origin git@github.com:username/repo.git"
+    );
+    process.exit(1);
+  }
+
+  // 11. Clean up
+  process.chdir("..");
+  fs.rmSync(tempDir, { recursive: true, force: true });
+
+  console.log("\n✅ Deployment complete! Your site should be live at:");
+  const repoName = remoteUrl.split("/").pop().replace(".git", "");
+  const userName = remoteUrl
+    .split("/")
+    .slice(-2, -1)[0]
+    .replace("github.com:", "")
+    .replace("github.com/", "");
+  console.log(
+    `   https://${userName}.github.io/${
+      repoName === userName + ".github.io" ? "" : repoName
+    }/board-games/`
+  );
+} catch (error) {
+  console.error("\n❌ Deployment failed:", error.message);
+  process.exit(1);
+}
