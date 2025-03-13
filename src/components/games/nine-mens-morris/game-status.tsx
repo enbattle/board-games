@@ -9,11 +9,10 @@ import {
 
 interface GameStatusProps {
   gameState: GameState;
-  mode: string;
   isAIThinking: boolean;
 }
 
-export function GameStatus({ gameState, mode, isAIThinking }: GameStatusProps) {
+export function GameStatus({ gameState, isAIThinking }: GameStatusProps) {
   const getStatusMessage = () => {
     if (gameState.winner) {
       return `${

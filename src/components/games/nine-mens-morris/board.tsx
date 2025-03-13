@@ -24,7 +24,6 @@ export function NineMensMorrisBoard({
 
   // Scale and offset factors for the board
   const scale = 60;
-  const offset = scale / 2; // This creates the offset from the edges
   const boardSize = 8 * scale; // Increased from 7 to 8 to accommodate the offset
   const dotSize = 12;
 

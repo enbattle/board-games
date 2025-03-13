@@ -12,14 +12,14 @@ const gomokuRules = [
     content: (
       <div className="space-y-2">
         <p>
-          Gomoku, also known as Five in a Row, is a classic strategy board game
+          {`Gomoku, also known as Five in a Row, is a classic strategy board game
           traditionally played on a Go board. The game originated in Japan and
-          has become popular worldwide.
+          has become popular worldwide.`}
         </p>
         <p>
-          Players take turns placing stones on the intersections of a 15×15
+          {`Players take turns placing stones on the intersections of a 15×15
           grid, with the goal of forming an unbroken line of five stones
-          horizontally, vertically, or diagonally.
+          horizontally, vertically, or diagonally.`}
         </p>
       </div>
     ),
@@ -65,9 +65,9 @@ const gomokuRules = [
         <p>There are several popular variations of Gomoku:</p>
         <ul className="list-disc list-inside space-y-2">
           <li>Standard (Free-style) - No additional rules</li>
-          <li>Pro - Black's first move must be in the center</li>
+          <li>{`Pro - Black's first move must be in the center`}</li>
           <li>
-            Swap - After Black's first move, White can choose to swap colors
+            {`Swap - After Black's first move, White can choose to swap colors`}
           </li>
           <li>Renju - Complex rules to balance the game for tournament play</li>
         </ul>
@@ -85,11 +85,11 @@ const gomokuRules = [
           <li>
             Look for opportunities to create multiple threats simultaneously
           </li>
-          <li>Block your opponent's attempts to create open-ended sequences</li>
+          <li>{`Block your opponent's attempts to create open-ended sequences`}</li>
           <li>Control the center area of the board when possible</li>
           <li>Pay attention to diagonal lines, which are often overlooked</li>
           <li>
-            Think several moves ahead and anticipate your opponent's plans
+            {`Think several moves ahead and anticipate your opponent's plans`}
           </li>
         </ul>
       </div>

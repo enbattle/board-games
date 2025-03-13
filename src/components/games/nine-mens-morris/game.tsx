@@ -249,11 +249,7 @@ export function NineMensMorrisGame() {
   return (
     <div className="flex flex-col items-center lg:flex-row lg:items-start lg:gap-8">
       <div className="mb-8 w-full max-w-md lg:mb-0">
-        <GameStatus
-          gameState={gameState}
-          mode={mode}
-          isAIThinking={isAIThinking}
-        />
+        <GameStatus gameState={gameState} isAIThinking={isAIThinking} />
         <div className="mt-4 flex justify-between">
           <Button onClick={resetGame} variant="outline" disabled={isAIThinking}>
             Reset Game

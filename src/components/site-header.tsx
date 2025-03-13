@@ -18,7 +18,7 @@ export function SiteHeader() {
               href="/games/nine-mens-morris"
               className="flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
             >
-              Nine Men's Morris
+              {`Nine Men's Morris`}
             </Link>
             <Link
               href="/games/gomoku"

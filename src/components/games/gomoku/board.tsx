@@ -64,7 +64,7 @@ export function GomokuBoard({
 
         {/* Grid lines */}
         {Array.from({ length: size }).map((_, i) => {
-          const { x, y } = getCoordinates(i, 0);
+          const { y } = getCoordinates(i, 0);
           return (
             <line
               key={`h-${i}`}
@@ -79,7 +79,7 @@ export function GomokuBoard({
         })}
 
         {Array.from({ length: size }).map((_, i) => {
-          const { x, y } = getCoordinates(0, i);
+          const { x } = getCoordinates(0, i);
           return (
             <line
               key={`v-${i}`}

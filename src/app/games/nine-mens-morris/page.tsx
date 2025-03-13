@@ -12,16 +12,16 @@ const nineMensMorrisRules = [
     content: (
       <div className="space-y-2">
         <p>
-          Nine Men's Morris is a strategy board game that has been played for
+          {`Nine Men's Morris is a strategy board game that has been played for
           centuries, dating back to the Roman Empire. The game is played on a
           board consisting of three concentric squares connected by lines at
-          their midpoints.
+          their midpoints.`}
         </p>
         <p>
-          Each player starts with nine pieces ("men") and the goal is to form
+          {`Each player starts with nine pieces ("men") and the goal is to form
           "mills" - three of your pieces in a row horizontally or vertically -
           and remove your opponent's pieces until they are left with fewer than
-          three pieces.
+          three pieces.`}
         </p>
       </div>
     ),
@@ -33,24 +33,24 @@ const nineMensMorrisRules = [
         <div>
           <h4 className="font-medium mb-2">1. Placing Phase</h4>
           <p>
-            Players take turns placing their nine pieces on empty intersections
+            {`Players take turns placing their nine pieces on empty intersections
             of the board. During this phase, if a player forms a mill, they can
-            remove one of their opponent's pieces that is not part of a mill.
+            remove one of their opponent's pieces that is not part of a mill.`}
           </p>
         </div>
         <div>
           <h4 className="font-medium mb-2">2. Moving Phase</h4>
           <p>
-            After all pieces are placed, players take turns moving one piece
+            {` After all pieces are placed, players take turns moving one piece
             along the lines to an adjacent empty intersection. Players can still
-            remove opponent's pieces by forming mills.
+            remove opponent's pieces by forming mills.`}
           </p>
         </div>
         <div>
           <h4 className="font-medium mb-2">3. Flying Phase</h4>
           <p>
-            When a player is reduced to three pieces, their pieces can "fly" to
-            any empty intersection on the board, not just adjacent ones.
+            {`When a player is reduced to three pieces, their pieces can "fly" to
+            any empty intersection on the board, not just adjacent ones.`}
           </p>
         </div>
       </div>
@@ -66,8 +66,8 @@ const nineMensMorrisRules = [
           count as mills.
         </p>
         <p>
-          When a player forms a mill, they can remove one of their opponent's
-          pieces from the board, with two restrictions:
+          {`When a player forms a mill, they can remove one of their opponent's
+          pieces from the board, with two restrictions:`}
         </p>
         <ul className="list-disc list-inside space-y-1 mt-2">
           <li>
@@ -90,8 +90,8 @@ const nineMensMorrisRules = [
             mill)
           </li>
           <li>
-            Blocking all of your opponent's pieces so they cannot make a legal
-            move
+            {`            Blocking all of your opponent's pieces so they cannot make a legal
+            move`}
           </li>
         </ul>
       </div>
@@ -107,8 +107,8 @@ const nineMensMorrisRules = [
             square
           </li>
           <li>
-            Look for opportunities to create "double mills" - where moving one
-            piece back and forth creates a mill each time
+            {`Look for opportunities to create "double mills" - where moving one
+            piece back and forth creates a mill each time`}
           </li>
           <li>
             Block your opponent from forming mills by placing your pieces
@@ -134,7 +134,7 @@ export default function NineMensMorrisPage() {
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Nine Men's Morris
+            {`            Nine Men's Morris`}
           </h1>
           <p className="text-muted-foreground">
             A strategic board game for two players dating back to the Roman

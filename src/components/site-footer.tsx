@@ -16,7 +16,7 @@ export function SiteFooter() {
             href="/games/nine-mens-morris"
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            Nine Men's Morris
+            {`Nine Men's Morris`}
           </Link>
           <Link
             href="/games/gomoku"

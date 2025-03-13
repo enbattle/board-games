@@ -61,7 +61,6 @@ function getLine(
   if (!player) return "";
 
   const [dr, dc] = direction;
-  const playerChar = player === Player.BLACK ? "1" : "2";
 
   // Look backwards first
   let r = row - dr * 4;
@@ -115,11 +114,9 @@ export function checkWinner(
 function evaluateThreats(
   board: (Player | null)[][],
   row: number,
-  col: number,
-  player: Player
+  col: number
 ): number {
   let score = 0;
-  const opponent = player === Player.BLACK ? Player.WHITE : Player.BLACK;
 
   for (const [dr, dc] of DIRECTIONS) {
     const line = getLine(board, row, col, [dr, dc], 9);
@@ -161,10 +158,10 @@ function evaluatePosition(board: (Player | null)[][], player: Player): number {
   for (let row = 0; row < 15; row++) {
     for (let col = 0; col < 15; col++) {
       if (board[row][col] === player) {
-        score += evaluateThreats(board, row, col, player);
+        score += evaluateThreats(board, row, col);
         score += WEIGHTS.POSITION_VALUE * POSITION_VALUES[row][col];
       } else if (board[row][col] === opponent) {
-        score -= evaluateThreats(board, row, col, opponent);
+        score -= evaluateThreats(board, row, col);
         score -= WEIGHTS.POSITION_VALUE * POSITION_VALUES[row][col];
       }
     }
