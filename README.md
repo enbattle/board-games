@@ -1,36 +1,93 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Board Games Collection
 
-## Getting Started
+A modern web application featuring classic board games, built with Next.js, TypeScript, and Tailwind CSS. Play timeless games like Nine Men's Morris and Gomoku (Five in a Row) in a beautiful, responsive interface.
 
-First, run the development server:
+## 🎮 Available Games
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Nine Men's Morris**: A strategic board game where players try to form mills (three pieces in a row) while preventing their opponent from doing the same.
+- **Gomoku (Five in a Row)**: A classic game where players take turns placing stones on a grid, trying to be the first to get five in a row.
+
+## ✨ Features
+
+- 🎯 Multiple classic board games
+- 🌓 Dark/Light theme support
+- 📱 Responsive design for all devices
+- 🎨 Modern UI with shadcn/ui components
+- ⚡ Fast performance with Next.js and Turbopack
+- 📖 Game rules and instructions
+- 🎮 Interactive game modes
+
+## 🛠️ Tech Stack
+
+- **Framework**: Next.js 15.2.0
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**:
+  - Radix UI
+  - shadcn/ui
+- **Theme**: next-themes
+- **Development**: Turbopack
+
+## 🚀 Getting Started
+
+1. **Clone the repository**
+
+   ```bash
+   git clone [repository-url]
+   cd board-games
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   npm install
+   # or
+   yarn install
+   # or
+   pnpm install
+   ```
+
+3. **Start the development server**
+
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   # or
+   pnpm dev
+   ```
+
+4. **Open [http://localhost:3000](http://localhost:3000) in your browser**
+
+## 📦 Available Scripts
+
+- `npm run dev` - Start the development server with Turbopack
+- `npm run build` - Build the production application
+- `npm run start` - Start the production server
+- `npm run lint` - Run ESLint for code linting
+- `npm run deploy` - Build and deploy the application
+
+## 🏗️ Project Structure
+
+```
+src/
+├── app/              # Next.js app router pages and layouts
+├── components/       # React components
+│   ├── ui/          # Basic UI components
+│   └── games/       # Game-specific components
+└── lib/             # Utility functions and shared logic
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🤝 Contributing
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📄 License
 
-## Learn More
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-To learn more about Next.js, take a look at the following resources:
+## 🙏 Acknowledgments
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Next.js](https://nextjs.org/) for the amazing framework
+- [shadcn/ui](https://ui.shadcn.com/) for the beautiful components
+- [Radix UI](https://www.radix-ui.com/) for accessible component primitives
