@@ -2,6 +2,8 @@
 
 A modern web application featuring classic board games, built with Next.js, TypeScript, and Tailwind CSS. Play timeless games like Nine Men's Morris and Gomoku (Five in a Row) in a beautiful, responsive interface.
 
+Live site here: [https://enbattle.github.io/board-games/](https://enbattle.github.io/board-games/)
+
 ## 🎮 Available Games
 
 - **Nine Men's Morris**: A strategic board game where players try to form mills (three pieces in a row) while preventing their opponent from doing the same.
