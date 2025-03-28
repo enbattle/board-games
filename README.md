@@ -67,7 +67,7 @@ Live site here: [https://enbattle.github.io/board-games/](https://enbattle.githu
 - `npm run build` - Build the production application
 - `npm run start` - Start the production server
 - `npm run lint` - Run ESLint for code linting
-- `npm run deploy` - Build and deploy the application
+- `npm run deploy` - Build and deploy the application (via GitHub pages)
 
 ## 🏗️ Project Structure
 
@@ -79,10 +79,6 @@ src/
 │   └── games/       # Game-specific components
 └── lib/             # Utility functions and shared logic
 ```
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 
