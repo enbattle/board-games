@@ -30,17 +30,18 @@ export function GomokuGame() {
 
   const [gameState, setGameState] = useState<GameState>(initialGameState);
 
-  // Reset game when mode or difficulty changes
-  useEffect(() => {
-    resetGame();
-  }, [mode, difficulty]);
-
-  const resetGame = () => {
+  const resetGame = useCallback(() => {
     setGameState({
       ...initialGameState,
       currentPlayer: Player.BLACK, // Always start with Black
     });
-  };
+  }, []);
+
+  // Reset game when mode or difficulty changes
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    resetGame();
+  }, [mode, difficulty, resetGame]);
 
   const handleCellClick = useCallback(
     (row: number, col: number) => {
@@ -118,6 +119,9 @@ export function GomokuGame() {
       gameState.currentPlayer === Player.WHITE &&
       !gameState.winner
     ) {
+      // Flags the start of the AI's timed turn below, not a derived value -
+      // there's no way to compute it without the effect.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsAIThinking(true);
       const timer = setTimeout(() => {
         const { row, col } = makeAIMove(gameState.board, difficulty);

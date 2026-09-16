@@ -162,7 +162,7 @@ export function GomokuBoard({
                 aria-label={`Row ${rowIndex + 1}, column ${
                   colIndex + 1
                 }: ${occupant}`}
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 style={{
                   left: `${x}px`,
                   top: `${y}px`,

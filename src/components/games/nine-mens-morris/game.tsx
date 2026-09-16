@@ -41,6 +41,7 @@ export function NineMensMorrisGame() {
 
   // Reset game when mode changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setGameState(initialGameState);
   }, [searchParams]);
 
@@ -249,6 +250,9 @@ export function NineMensMorrisGame() {
       !gameState.millFormed &&
       !gameState.winner
     ) {
+      // Flags the start of the AI's timed turn below, not a derived value -
+      // there's no way to compute it without the effect.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsAIThinking(true);
       const timer = setTimeout(() => {
         const newState = makeAIMove(gameState, difficulty);

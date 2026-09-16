@@ -279,7 +279,7 @@ export function NineMensMorrisBoard({
             aria-label={`Position ${position + 1}: ${occupant}${
               isSelected ? ", selected" : ""
             }${isValidMove ? ", valid move" : ""}`}
-            className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+            className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-200 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
               isSelected ? "ring-4 ring-blue-500 rounded-full" : ""
             } ${
               isValidMove ? "cursor-pointer" : piece ? "cursor-pointer" : ""
