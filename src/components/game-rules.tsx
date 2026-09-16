@@ -23,8 +23,8 @@ export function GameRules({ sections }: GameRulesProps) {
         <h2 className="text-xl font-semibold text-white">Game Rules</h2>
       </div>
       <Accordion type="single" collapsible className="w-full">
-        {sections.map((section, index) => (
-          <AccordionItem key={index} value={`item-${index}`}>
+        {sections.map((section) => (
+          <AccordionItem key={section.title} value={section.title}>
             <AccordionTrigger className="text-lg font-medium">
               {section.title}
             </AccordionTrigger>

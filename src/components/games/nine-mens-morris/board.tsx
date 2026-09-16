@@ -264,11 +264,22 @@ export function NineMensMorrisBoard({
         const isValidMove = validMoves.includes(position);
         const isInMill =
           piece !== null && highlightMills && checkForMill(board, position);
+        const occupant =
+          piece === Player.WHITE
+            ? "White"
+            : piece === Player.BLACK
+            ? "Black"
+            : "Empty";
 
         return (
           <div
             key={position}
-            className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-200 ${
+            role="button"
+            tabIndex={0}
+            aria-label={`Position ${position + 1}: ${occupant}${
+              isSelected ? ", selected" : ""
+            }${isValidMove ? ", valid move" : ""}`}
+            className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
               isSelected ? "ring-4 ring-blue-500 rounded-full" : ""
             } ${
               isValidMove ? "cursor-pointer" : piece ? "cursor-pointer" : ""
@@ -278,6 +289,12 @@ export function NineMensMorrisBoard({
               top: `${y * scale}px`,
             }}
             onClick={() => onPositionClick(position)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onPositionClick(position);
+              }
+            }}
           >
             {piece === null ? (
               <div

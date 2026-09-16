@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { GameModeSelector } from "@/components/game-mode-selector";
+import { DifficultySelector } from "@/components/difficulty-selector";
 import { NineMensMorrisGame } from "@/components/games/nine-mens-morris/game";
 import { Button } from "@/components/ui/button";
 import { GameRules } from "@/components/game-rules";
@@ -157,12 +158,15 @@ export default function NineMensMorrisPage() {
             }
           >
             <GameModeSelector
-              gameName="nine-mens-morris"
               modes={[
                 { id: "pvp", name: "Player vs Player" },
                 { id: "ai", name: "Player vs AI" },
               ]}
             />
+          </Suspense>
+
+          <Suspense fallback={null}>
+            <DifficultySelector />
           </Suspense>
 
           <div className="flex items-center justify-center">

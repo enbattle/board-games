@@ -83,6 +83,8 @@ export function GameStatus({ gameState, mode, isAIThinking }: GameStatusProps) {
           </div>
 
           <div
+            role="status"
+            aria-live="polite"
             className={`rounded-md p-3 text-center font-medium ${
               gameState.winner
                 ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"

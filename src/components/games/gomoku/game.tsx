@@ -7,6 +7,7 @@ import { GameStatus } from "./game-status";
 import { Player, type GameState } from "./types";
 import { checkWinner, makeAIMove } from "./game-logic";
 import { Loader2 } from "lucide-react";
+import { isDifficulty, type Difficulty } from "@/lib/ai-search";
 
 const initialGameState: GameState = {
   board: Array(15)
@@ -21,14 +22,18 @@ const initialGameState: GameState = {
 export function GomokuGame() {
   const searchParams = useSearchParams();
   const mode = searchParams.get("mode") || "pvp";
+  const difficultyParam = searchParams.get("difficulty");
+  const difficulty: Difficulty = isDifficulty(difficultyParam)
+    ? difficultyParam
+    : "medium";
   const [isAIThinking, setIsAIThinking] = useState(false);
 
   const [gameState, setGameState] = useState<GameState>(initialGameState);
 
-  // Reset game when mode changes
+  // Reset game when mode or difficulty changes
   useEffect(() => {
     resetGame();
-  }, [mode]);
+  }, [mode, difficulty]);
 
   const resetGame = () => {
     setGameState({
@@ -87,11 +92,13 @@ export function GomokuGame() {
     const newBoard = gameState.board.map((row) => [...row]);
     newBoard[lastMove.row][lastMove.col] = null;
 
-    // If playing against AI and undoing two moves
+    // In AI mode, "lastMove" above is the AI's reply, so also undo the
+    // human's move before it - otherwise Undo would just hand the turn
+    // straight back to the AI to make the same reply again.
     if (mode === "ai" && newHistory.length > 0 && gameState.winner === null) {
-      const aiMove = newHistory.pop();
-      if (aiMove) {
-        newBoard[aiMove.row][aiMove.col] = null;
+      const previousHumanMove = newHistory.pop();
+      if (previousHumanMove) {
+        newBoard[previousHumanMove.row][previousHumanMove.col] = null;
       }
     }
 
@@ -113,7 +120,7 @@ export function GomokuGame() {
     ) {
       setIsAIThinking(true);
       const timer = setTimeout(() => {
-        const { row, col } = makeAIMove(gameState.board);
+        const { row, col } = makeAIMove(gameState.board, difficulty);
 
         const newBoard = gameState.board.map((row) => [...row]);
         newBoard[row][col] = Player.WHITE;
@@ -143,7 +150,7 @@ export function GomokuGame() {
 
       return () => clearTimeout(timer);
     }
-  }, [gameState, mode]);
+  }, [gameState, mode, difficulty]);
 
   return (
     <div className="flex flex-col items-center lg:flex-row lg:items-start lg:gap-8">

@@ -9,14 +9,20 @@ import {
 
 interface GameStatusProps {
   gameState: GameState;
+  mode: string;
   isAIThinking: boolean;
 }
 
-export function GameStatus({ gameState, isAIThinking }: GameStatusProps) {
+export function GameStatus({ gameState, mode, isAIThinking }: GameStatusProps) {
+  const whiteLabel = mode === "ai" ? "White (You)" : "White (Player 1)";
+  const blackLabel = mode === "ai" ? "Black (AI)" : "Black (Player 2)";
+  const currentLabel =
+    gameState.currentPlayer === Player.WHITE ? whiteLabel : blackLabel;
+
   const getStatusMessage = () => {
     if (gameState.winner) {
       return `${
-        gameState.winner === Player.WHITE ? "White (You)" : "Black (AI)"
+        gameState.winner === Player.WHITE ? whiteLabel : blackLabel
       } wins!`;
     }
 
@@ -25,24 +31,18 @@ export function GameStatus({ gameState, isAIThinking }: GameStatusProps) {
     }
 
     if (gameState.millFormed) {
-      return `${
-        gameState.currentPlayer === Player.WHITE ? "White (You)" : "Black (AI)"
-      } formed a mill! Remove an opponent's piece.`;
+      return `${currentLabel} formed a mill! Remove an opponent's piece.`;
     }
 
     if (gameState.phase === GamePhase.PLACING) {
-      return `${
-        gameState.currentPlayer === Player.WHITE ? "White (You)" : "Black (AI)"
-      }'s turn to place a piece.`;
+      return `${currentLabel}'s turn to place a piece.`;
     }
 
     if (gameState.selectedPosition !== null) {
       return `Select a position to move your piece.`;
     }
 
-    return `${
-      gameState.currentPlayer === Player.WHITE ? "White (You)" : "Black (AI)"
-    }'s turn to move a piece.`;
+    return `${currentLabel}'s turn to move a piece.`;
   };
 
   const getPhaseDescription = () => {
@@ -65,7 +65,7 @@ export function GameStatus({ gameState, isAIThinking }: GameStatusProps) {
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <div className="h-4 w-4 rounded-full bg-white border border-gray-300"></div>
-                <span className="font-medium">White (You)</span>
+                <span className="font-medium">{whiteLabel}</span>
               </div>
               <div className="text-sm">
                 Pieces left: {gameState.whitePiecesLeft}
@@ -77,7 +77,7 @@ export function GameStatus({ gameState, isAIThinking }: GameStatusProps) {
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <div className="h-4 w-4 rounded-full bg-gray-900 border border-gray-700"></div>
-                <span className="font-medium">Black (AI)</span>
+                <span className="font-medium">{blackLabel}</span>
               </div>
               <div className="text-sm">
                 Pieces left: {gameState.blackPiecesLeft}
@@ -88,6 +88,8 @@ export function GameStatus({ gameState, isAIThinking }: GameStatusProps) {
           </div>
 
           <div
+            role="status"
+            aria-live="polite"
             className={`rounded-md p-3 text-center font-medium ${
               gameState.winner
                 ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"

@@ -9,7 +9,6 @@ interface GameMode {
 }
 
 interface GameModeSelectorProps {
-  gameName: string;
   modes: GameMode[];
 }
 

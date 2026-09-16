@@ -1,5 +1,5 @@
 // scripts/deploy-gh-pages.js
-const { execSync } = require("child_process");
+const { execSync, execFileSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
@@ -8,10 +8,16 @@ const outputDir = "out";
 
 console.log("🚀 Starting GitHub Pages deployment...");
 
+// Runs git with the given argv, never through a shell, so no argument
+// (e.g. a remote URL) can be re-parsed/re-interpreted by a shell.
+function git(args, options = {}) {
+  return execFileSync("git", args, options);
+}
+
 try {
   // 1. Make sure we're in a git repository
   try {
-    execSync("git rev-parse --is-inside-work-tree", { stdio: "ignore" });
+    git(["rev-parse", "--is-inside-work-tree"], { stdio: "ignore" });
   } catch (e) {
     console.error("❌ Error: This directory is not a Git repository.");
     console.log("Please run this script from the root of your Git repository.");
@@ -19,10 +25,8 @@ try {
   }
 
   // 2. Check if origin remote exists
-  let remoteExists = false;
   try {
-    execSync("git remote get-url origin", { stdio: "ignore" });
-    remoteExists = true;
+    git(["remote", "get-url", "origin"], { stdio: "ignore" });
   } catch (e) {
     console.error('❌ Error: No "origin" remote found in this Git repository.');
     console.log("Please add a remote with:");
@@ -31,7 +35,7 @@ try {
   }
 
   // 3. Get remote URL if it exists
-  const remoteUrl = execSync("git remote get-url origin").toString().trim();
+  const remoteUrl = git(["remote", "get-url", "origin"]).toString().trim();
   console.log(`\n🔗 Using repository: ${remoteUrl}`);
 
   // 4. Build the project
@@ -56,24 +60,26 @@ try {
   // 8. Initialize a new git repo in the temporary directory
   console.log("\n🔧 Setting up deployment repository...");
   process.chdir(tempDir);
-  execSync("git init", { stdio: "ignore" });
-  execSync(`git remote add origin ${remoteUrl}`, { stdio: "ignore" });
+  git(["init"], { stdio: "ignore" });
+  git(["remote", "add", "origin", remoteUrl], { stdio: "ignore" });
 
   // 9. Create and commit the gh-pages content
-  execSync("git add --all", { stdio: "inherit" });
-  execSync('git commit -m "Deploy to GitHub Pages"', { stdio: "ignore" });
+  git(["add", "--all"], { stdio: "inherit" });
+  git(["commit", "-m", "Deploy to GitHub Pages"], { stdio: "ignore" });
 
   // 10. Create a new branch and force-push to gh-pages
   console.log("\n📤 Pushing to gh-pages branch...");
-  execSync("git checkout -b gh-pages", { stdio: "ignore" });
+  git(["checkout", "-b", "gh-pages"], { stdio: "ignore" });
 
   try {
     // Try to push (this might fail if credentials aren't set up)
-    execSync("git push -f origin gh-pages", { stdio: "inherit" });
+    git(["push", "-f", "origin", "gh-pages"], { stdio: "inherit" });
   } catch (error) {
     console.error("\n❌ Push failed. Please check your GitHub credentials.");
     console.log("\nYou might need to set up authentication with GitHub:");
-    console.log("1. Use HTTPS with a personal access token:");
+    console.log(
+      "1. Use HTTPS with a personal access token:"
+    );
     console.log(
       "   git remote set-url origin https://USERNAME:TOKEN@github.com/username/repo.git"
     );

@@ -6,8 +6,14 @@ import { useSearchParams } from "next/navigation";
 import { NineMensMorrisBoard } from "./board";
 import { GameStatus } from "./game-status";
 import { GamePhase, Player, type GameState } from "./types";
-import { checkForMill, getValidMoves, makeAIMove } from "./game-logic";
+import {
+  checkForMill,
+  getValidMoves,
+  hasAnyValidMoves,
+  makeAIMove,
+} from "./game-logic";
 import { Loader2 } from "lucide-react";
+import { isDifficulty, type Difficulty } from "@/lib/ai-search";
 
 const initialGameState: GameState = {
   phase: GamePhase.PLACING,
@@ -25,6 +31,10 @@ const initialGameState: GameState = {
 export function NineMensMorrisGame() {
   const searchParams = useSearchParams();
   const mode = searchParams.get("mode") || "pvp";
+  const difficultyParam = searchParams.get("difficulty");
+  const difficulty: Difficulty = isDifficulty(difficultyParam)
+    ? difficultyParam
+    : "medium";
   const [isAIThinking, setIsAIThinking] = useState(false);
 
   const [gameState, setGameState] = useState<GameState>(initialGameState);
@@ -74,7 +84,9 @@ export function NineMensMorrisGame() {
               : gameState.blackPiecesOnBoard,
         };
 
-        // Check if opponent has less than 3 pieces in moving phase (game over)
+        // Check for game over in moving phase: either the opponent has
+        // dropped below 3 pieces, or the removal left them with no legal
+        // move at all (both are win conditions, not just the piece count).
         if (gameState.phase === GamePhase.MOVING) {
           if (
             opponentPlayer === Player.WHITE &&
@@ -86,6 +98,16 @@ export function NineMensMorrisGame() {
             newState.blackPiecesOnBoard < 3
           ) {
             newState.winner = Player.WHITE;
+          } else if (
+            !hasAnyValidMoves(
+              newBoard,
+              opponentPlayer,
+              opponentPlayer === Player.WHITE
+                ? newState.whitePiecesOnBoard
+                : newState.blackPiecesOnBoard
+            )
+          ) {
+            newState.winner = gameState.currentPlayer;
           }
         }
 
@@ -198,25 +220,17 @@ export function NineMensMorrisGame() {
               gameState.currentPlayer === Player.WHITE
                 ? Player.BLACK
                 : Player.WHITE;
-            let opponentHasValidMoves = false;
 
-            for (let i = 0; i < 24; i++) {
-              if (newBoard[i] === opponentPlayer) {
-                const opponentMoves = getValidMoves(
-                  newBoard,
-                  i,
-                  (opponentPlayer === Player.WHITE
-                    ? newState.whitePiecesOnBoard
-                    : newState.blackPiecesOnBoard) <= 3
-                );
-                if (opponentMoves.length > 0) {
-                  opponentHasValidMoves = true;
-                  break;
-                }
-              }
-            }
-
-            if (!opponentHasValidMoves && !millFormed) {
+            if (
+              !millFormed &&
+              !hasAnyValidMoves(
+                newBoard,
+                opponentPlayer,
+                opponentPlayer === Player.WHITE
+                  ? newState.whitePiecesOnBoard
+                  : newState.blackPiecesOnBoard
+              )
+            ) {
               newState.winner = gameState.currentPlayer;
             }
 
@@ -237,19 +251,19 @@ export function NineMensMorrisGame() {
     ) {
       setIsAIThinking(true);
       const timer = setTimeout(() => {
-        const newState = makeAIMove(gameState);
+        const newState = makeAIMove(gameState, difficulty);
         setGameState(newState);
         setIsAIThinking(false);
       }, 1000);
 
       return () => clearTimeout(timer);
     }
-  }, [gameState, mode]);
+  }, [gameState, mode, difficulty]);
 
   return (
     <div className="flex flex-col items-center lg:flex-row lg:items-start lg:gap-8">
       <div className="mb-8 w-full max-w-md lg:mb-0">
-        <GameStatus gameState={gameState} isAIThinking={isAIThinking} />
+        <GameStatus gameState={gameState} mode={mode} isAIThinking={isAIThinking} />
         <div className="mt-4 flex justify-between">
           <Button onClick={resetGame} variant="outline" disabled={isAIThinking}>
             Reset Game

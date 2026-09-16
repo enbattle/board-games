@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { GameModeSelector } from "@/components/game-mode-selector";
+import { DifficultySelector } from "@/components/difficulty-selector";
 import { GomokuGame } from "@/components/games/gomoku/game";
 import { Button } from "@/components/ui/button";
 import { GameRules } from "@/components/game-rules";
@@ -124,12 +125,15 @@ export default function GomokuPage() {
             }
           >
             <GameModeSelector
-              gameName="gomoku"
               modes={[
                 { id: "pvp", name: "Player vs Player" },
                 { id: "ai", name: "Player vs AI" },
               ]}
             />
+          </Suspense>
+
+          <Suspense fallback={null}>
+            <DifficultySelector />
           </Suspense>
 
           <div className="flex items-center justify-center">

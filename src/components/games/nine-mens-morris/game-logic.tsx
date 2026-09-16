@@ -1,4 +1,29 @@
 import { GamePhase, Player, type GameState } from "./types";
+import {
+  type Difficulty,
+  SEARCH_TIME_LIMIT_MS,
+  SearchTimeout,
+  nowMs,
+  runIterativeDeepening,
+} from "@/lib/ai-search";
+
+// Max search depth per phase and root-move randomization per difficulty.
+// "hard" keeps the original depths this AI shipped with; easy/medium search
+// shallower and randomize among the top few root moves so the AI is
+// beatable and doesn't play identically every game.
+const DEPTH_BY_DIFFICULTY: Record<
+  Difficulty,
+  { placing: number; moving: number }
+> = {
+  easy: { placing: 2, moving: 3 },
+  medium: { placing: 4, moving: 4 },
+  hard: { placing: 5, moving: 6 },
+};
+const RANDOM_TOP_N_BY_DIFFICULTY: Record<Difficulty, number> = {
+  easy: 3,
+  medium: 1,
+  hard: 1,
+};
 
 // Enhanced strategic weights for expert-level play
 const WEIGHTS = {
@@ -94,7 +119,7 @@ export const adjacentPositions: number[][] = [
   [1, 3, 5, 7],
   [4, 13],
   [7, 11],
-  [4, 6, 8, 16],
+  [4, 6, 8],
   [7, 12],
   [0, 10, 21],
   [3, 9, 11, 18],
@@ -103,7 +128,7 @@ export const adjacentPositions: number[][] = [
   [5, 12, 14, 20],
   [2, 13, 23],
   [11, 16],
-  [7, 15, 17, 19],
+  [15, 17, 19],
   [12, 16],
   [10, 19],
   [16, 18, 20, 22],
@@ -113,8 +138,8 @@ export const adjacentPositions: number[][] = [
   [14, 22],
 ];
 
-// Check for advanced mill patterns
-export function checkForAdvancedMill(
+// Check whether the piece at `position` is part of a formed mill
+export function checkForMill(
   board: (Player | null)[],
   position: number
 ): boolean {
@@ -129,8 +154,21 @@ export function checkForAdvancedMill(
   });
 }
 
-// Export for backward compatibility
-export const checkForMill = checkForAdvancedMill;
+// True if `player` has at least one legal move available (used to detect
+// the "opponent is completely blocked" win condition).
+export function hasAnyValidMoves(
+  board: (Player | null)[],
+  player: Player,
+  piecesOnBoard: number
+): boolean {
+  const canFly = piecesOnBoard <= 3;
+  for (let i = 0; i < board.length; i++) {
+    if (board[i] === player && getValidMoves(board, i, canFly).length > 0) {
+      return true;
+    }
+  }
+  return false;
+}
 
 // Enhanced valid moves calculation with strategic prioritization
 export function getValidMoves(
@@ -199,7 +237,7 @@ function findBestPieceToRemove(
 
   // First, try to find pieces that are not in mills
   for (let i = 0; i < board.length; i++) {
-    if (board[i] === opponent && !checkForAdvancedMill(board, i)) {
+    if (board[i] === opponent && !checkForMill(board, i)) {
       const tempBoard = [...board];
       tempBoard[i] = null;
       const score = evaluatePosition(tempBoard, gameState, player);
@@ -373,7 +411,7 @@ function getAllPossibleMoves(
           const tempBoard = [...board];
           tempBoard[pos] = null;
           tempBoard[to] = player;
-          if (checkForAdvancedMill(tempBoard, to)) priority += 500;
+          if (checkForMill(tempBoard, to)) priority += 500;
           if (checkPotentialTripleMill(tempBoard, to, player)) priority += 800;
           moves.push({ from: pos, to, priority });
         });
@@ -385,18 +423,34 @@ function getAllPossibleMoves(
   return moves.sort((a, b) => b.priority - a.priority);
 }
 
-// Enhanced minimax algorithm with deeper search and advanced pruning
+interface RankedMove {
+  from: number;
+  to: number;
+  removePosition?: number;
+  score: number;
+}
+
+// Enhanced minimax algorithm with deeper search and advanced pruning.
+// `deadline` bounds the wall-clock time this call tree may run; once
+// exceeded it throws SearchTimeout so the caller can fall back to the
+// best move found at the last fully-completed depth. `rootMoves`, when
+// provided, collects every move evaluated at THIS call's ply (used only
+// by the outermost call per depth, via getRankedRootMoves).
 function minimax(
   gameState: GameState,
   depth: number,
   alpha: number,
   beta: number,
   maximizingPlayer: boolean,
-  isMillMove = false
+  isMillMove = false,
+  deadline: number = Number.POSITIVE_INFINITY,
+  rootMoves?: RankedMove[]
 ): {
   score: number;
   move?: { from: number; to: number; removePosition?: number };
 } {
+  if (nowMs() > deadline) throw new SearchTimeout();
+
   const player = maximizingPlayer ? Player.BLACK : Player.WHITE;
 
   // Enhanced terminal conditions
@@ -445,7 +499,7 @@ function minimax(
     newState.board = newBoard;
 
     // Handle mill formation with advanced tactics
-    const millFormed = checkForAdvancedMill(newBoard, to);
+    const millFormed = checkForMill(newBoard, to);
     let removePosition: number | undefined;
 
     if (millFormed && !isMillMove) {
@@ -466,8 +520,13 @@ function minimax(
       alpha,
       beta,
       !maximizingPlayer,
-      millFormed
+      millFormed,
+      deadline
     ).score;
+
+    if (rootMoves) {
+      rootMoves.push({ from, to, removePosition, score });
+    }
 
     if (maximizingPlayer) {
       if (score > bestScore) {
@@ -489,16 +548,27 @@ function minimax(
   return { score: bestScore, move: bestMove };
 }
 
-export function makeAIMove(gameState: GameState): GameState {
-  // Increased depth for stronger play
-  const depth = gameState.phase === GamePhase.PLACING ? 5 : 6;
-  const { move } = minimax(
-    gameState,
-    depth,
-    Number.NEGATIVE_INFINITY,
-    Number.POSITIVE_INFINITY,
-    true
-  );
+export function makeAIMove(
+  gameState: GameState,
+  difficulty: Difficulty = "medium"
+): GameState {
+  const depths = DEPTH_BY_DIFFICULTY[difficulty];
+  const maxDepth =
+    gameState.phase === GamePhase.PLACING ? depths.placing : depths.moving;
+  const randomTopN = RANDOM_TOP_N_BY_DIFFICULTY[difficulty];
+  const deadline = nowMs() + SEARCH_TIME_LIMIT_MS[difficulty];
+
+  const rankedMoves = runIterativeDeepening(maxDepth, deadline, (depth) => {
+    const pass: RankedMove[] = [];
+    minimax(gameState, depth, -Infinity, Infinity, true, false, deadline, pass);
+    return pass;
+  });
+
+  if (rankedMoves.length === 0) return gameState;
+
+  rankedMoves.sort((a, b) => b.score - a.score);
+  const pool = rankedMoves.slice(0, Math.max(1, randomTopN));
+  const move = pool[Math.floor(Math.random() * pool.length)];
 
   if (!move) return gameState;
 
@@ -516,7 +586,7 @@ export function makeAIMove(gameState: GameState): GameState {
   }
 
   // Handle mill formation and piece removal
-  const millFormed = checkForAdvancedMill(newBoard, move.to);
+  const millFormed = checkForMill(newBoard, move.to);
   if (millFormed && move.removePosition !== undefined) {
     // Remove the opponent's piece if a mill was formed
     newBoard[move.removePosition] = null;
@@ -546,25 +616,11 @@ export function makeAIMove(gameState: GameState): GameState {
     // Win if opponent has less than 3 pieces
     if (newState.whitePiecesOnBoard < 3) {
       newState.winner = Player.BLACK;
-    } else {
-      // Check if opponent has any legal moves
-      let opponentHasValidMoves = false;
-      for (let i = 0; i < 24; i++) {
-        if (newBoard[i] === Player.WHITE) {
-          const moves = getValidMoves(
-            newBoard,
-            i,
-            newState.whitePiecesOnBoard <= 3
-          );
-          if (moves.length > 0) {
-            opponentHasValidMoves = true;
-            break;
-          }
-        }
-      }
-      if (!opponentHasValidMoves && !millFormed) {
-        newState.winner = Player.BLACK;
-      }
+    } else if (
+      !millFormed &&
+      !hasAnyValidMoves(newBoard, Player.WHITE, newState.whitePiecesOnBoard)
+    ) {
+      newState.winner = Player.BLACK;
     }
   }
 

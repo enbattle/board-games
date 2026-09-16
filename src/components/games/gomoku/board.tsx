@@ -147,11 +147,22 @@ export function GomokuBoard({
         {board.map((row, rowIndex) =>
           row.map((cell, colIndex) => {
             const { x, y } = getCoordinates(rowIndex, colIndex);
+            const occupant =
+              cell === Player.BLACK
+                ? "Black"
+                : cell === Player.WHITE
+                ? "White"
+                : "Empty";
 
             return (
               <div
                 key={`cell-${rowIndex}-${colIndex}`}
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                aria-label={`Row ${rowIndex + 1}, column ${
+                  colIndex + 1
+                }: ${occupant}`}
+                className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 style={{
                   left: `${x}px`,
                   top: `${y}px`,
@@ -159,6 +170,12 @@ export function GomokuBoard({
                   height: `${cellSize}px`,
                 }}
                 onClick={() => onCellClick(rowIndex, colIndex)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onCellClick(rowIndex, colIndex);
+                  }
+                }}
               />
             );
           })

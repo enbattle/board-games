@@ -21,12 +21,7 @@ export function GameCard({ title, description, image, href }: GameCardProps) {
     <Card className="overflow-hidden">
       <CardHeader className="p-0">
         <div className="relative h-[200px] w-full">
-          <Image
-            src={image || "/placeholder.svg"}
-            alt={title}
-            fill
-            className="object-cover"
-          />
+          <Image src={image} alt={title} fill className="object-cover" />
         </div>
       </CardHeader>
       <CardContent className="p-6">

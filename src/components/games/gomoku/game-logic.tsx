@@ -1,4 +1,26 @@
 import { Player } from "./types";
+import {
+  type Difficulty,
+  SEARCH_TIME_LIMIT_MS,
+  SearchTimeout,
+  nowMs,
+  runIterativeDeepening,
+} from "@/lib/ai-search";
+
+// Max search depth and root-move randomization per difficulty. Easy/Medium
+// intentionally search shallower AND pick randomly among the top few root
+// moves instead of always the single best, so the AI is beatable and varies
+// from game to game rather than playing identically every time.
+const DEPTH_BY_DIFFICULTY: Record<Difficulty, number> = {
+  easy: 2,
+  medium: 3,
+  hard: 4,
+};
+const RANDOM_TOP_N_BY_DIFFICULTY: Record<Difficulty, number> = {
+  easy: 3,
+  medium: 1,
+  hard: 1,
+};
 
 // Strategic weights for expert-level play
 const WEIGHTS = {
@@ -13,14 +35,22 @@ const WEIGHTS = {
   POSITION_VALUE: 5, // Base value for strategic positions
 };
 
+// The board is always 15x15 (see GomokuGame's initialGameState) - kept as
+// one constant so every bounds/center calculation below stays in lockstep.
+const BOARD_SIZE = 15;
+const CENTER = Math.floor(BOARD_SIZE / 2);
+
 // Strategic position values (higher in center, lower at edges)
-const POSITION_VALUES = Array(15)
+const POSITION_VALUES = Array(BOARD_SIZE)
   .fill(0)
   .map((_, row) =>
-    Array(15)
+    Array(BOARD_SIZE)
       .fill(0)
       .map((_, col) => {
-        const distToCenter = Math.max(Math.abs(7 - row), Math.abs(7 - col));
+        const distToCenter = Math.max(
+          Math.abs(CENTER - row),
+          Math.abs(CENTER - col)
+        );
         return Math.max(8 - distToCenter, 1);
       })
   );
@@ -45,7 +75,7 @@ const PATTERNS = {
 
 // Check if a position is within the board bounds
 function isValidPosition(row: number, col: number): boolean {
-  return row >= 0 && row < 15 && col >= 0 && col < 15;
+  return row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE;
 }
 
 // Get line of positions in a direction for pattern matching
@@ -155,8 +185,8 @@ function evaluatePosition(board: (Player | null)[][], player: Player): number {
   const opponent = player === Player.BLACK ? Player.WHITE : Player.BLACK;
 
   // Evaluate each position on the board
-  for (let row = 0; row < 15; row++) {
-    for (let col = 0; col < 15; col++) {
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    for (let col = 0; col < BOARD_SIZE; col++) {
       if (board[row][col] === player) {
         score += evaluateThreats(board, row, col);
         score += WEIGHTS.POSITION_VALUE * POSITION_VALUES[row][col];
@@ -178,8 +208,8 @@ function getValidMoves(
   const visited = new Set<string>();
 
   // Only consider moves adjacent to existing pieces
-  for (let row = 0; row < 15; row++) {
-    for (let col = 0; col < 15; col++) {
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    for (let col = 0; col < BOARD_SIZE; col++) {
       if (board[row][col] !== null) {
         // Check adjacent positions
         for (let dr = -2; dr <= 2; dr++) {
@@ -204,34 +234,41 @@ function getValidMoves(
 
   // If no moves found (empty board), start in center area
   if (moves.length === 0) {
-    const center = Math.floor(15 / 2);
-    moves.push({ row: center, col: center });
+    moves.push({ row: CENTER, col: CENTER });
   }
 
   return moves;
 }
 
-// Enhanced minimax algorithm with alpha-beta pruning
+// Enhanced minimax algorithm with alpha-beta pruning.
+// `maximizingPlayer` means "it's aiPlayer's turn to move at this node" -
+// the search always maximizes aiPlayer's score, whichever color that is,
+// rather than assuming a fixed color.
 function minimax(
   board: (Player | null)[][],
   depth: number,
   alpha: number,
   beta: number,
   maximizingPlayer: boolean,
-  lastMove: { row: number; col: number } | null
+  lastMove: { row: number; col: number } | null,
+  aiPlayer: Player,
+  opponent: Player,
+  deadline: number
 ): { score: number; move?: { row: number; col: number } } {
+  if (nowMs() > deadline) throw new SearchTimeout();
+
   // Check for terminal conditions
   if (lastMove) {
     const { winner } = checkWinner(
       board,
       lastMove.row,
       lastMove.col,
-      maximizingPlayer ? Player.WHITE : Player.BLACK
+      maximizingPlayer ? opponent : aiPlayer
     );
     if (winner) {
       return {
         score:
-          winner === Player.BLACK
+          winner === aiPlayer
             ? Number.POSITIVE_INFINITY
             : Number.NEGATIVE_INFINITY,
       };
@@ -239,7 +276,7 @@ function minimax(
   }
 
   if (depth === 0) {
-    return { score: evaluatePosition(board, Player.BLACK) };
+    return { score: evaluatePosition(board, aiPlayer) };
   }
 
   const moves = getValidMoves(board);
@@ -250,11 +287,9 @@ function minimax(
   // Sort moves by preliminary evaluation for better pruning
   const movesWithScores = moves.map((move) => {
     const { row, col } = move;
-    board[row][col] = maximizingPlayer ? Player.BLACK : Player.WHITE;
-    const score = evaluatePosition(
-      board,
-      maximizingPlayer ? Player.BLACK : Player.WHITE
-    );
+    const mover = maximizingPlayer ? aiPlayer : opponent;
+    board[row][col] = mover;
+    const score = evaluatePosition(board, mover);
     board[row][col] = null;
     return { ...move, score };
   });
@@ -269,12 +304,26 @@ function minimax(
     : Number.POSITIVE_INFINITY;
 
   for (const { row, col } of movesWithScores) {
-    board[row][col] = maximizingPlayer ? Player.BLACK : Player.WHITE;
-    const score = minimax(board, depth - 1, alpha, beta, !maximizingPlayer, {
-      row,
-      col,
-    }).score;
-    board[row][col] = null;
+    board[row][col] = maximizingPlayer ? aiPlayer : opponent;
+    let score: number;
+    try {
+      score = minimax(
+        board,
+        depth - 1,
+        alpha,
+        beta,
+        !maximizingPlayer,
+        { row, col },
+        aiPlayer,
+        opponent,
+        deadline
+      ).score;
+    } finally {
+      // Always undo the trial move, even if the search above timed out,
+      // so a thrown SearchTimeout can never leave a phantom stone on the
+      // live board (this board is the same array reference as game state).
+      board[row][col] = null;
+    }
 
     if (maximizingPlayer) {
       if (score > bestScore) {
@@ -296,18 +345,67 @@ function minimax(
   return { score: bestScore, move: bestMove };
 }
 
-export function makeAIMove(board: (Player | null)[][]): {
+interface RankedMove {
   row: number;
   col: number;
-} {
-  const depth = 4; // Adjust based on performance requirements
-  const { move } = minimax(
-    board,
-    depth,
-    Number.NEGATIVE_INFINITY,
-    Number.POSITIVE_INFINITY,
-    true,
-    null
+  score: number;
+}
+
+// Evaluate every candidate root move to `depth` and return them ranked
+// best-first for aiPlayer. Used both to pick the final move and, on lower
+// difficulties, as the pool to randomize among.
+function getRankedRootMoves(
+  board: (Player | null)[][],
+  depth: number,
+  aiPlayer: Player,
+  opponent: Player,
+  deadline: number
+): RankedMove[] {
+  const moves = getValidMoves(board);
+  const ranked: RankedMove[] = [];
+
+  for (const { row, col } of moves) {
+    board[row][col] = aiPlayer;
+    let score: number;
+    try {
+      score = minimax(
+        board,
+        depth - 1,
+        Number.NEGATIVE_INFINITY,
+        Number.POSITIVE_INFINITY,
+        false,
+        { row, col },
+        aiPlayer,
+        opponent,
+        deadline
+      ).score;
+    } finally {
+      board[row][col] = null;
+    }
+    ranked.push({ row, col, score });
+  }
+
+  ranked.sort((a, b) => b.score - a.score);
+  return ranked;
+}
+
+export function makeAIMove(
+  board: (Player | null)[][],
+  difficulty: Difficulty = "medium",
+  aiPlayer: Player = Player.WHITE
+): { row: number; col: number } {
+  const opponent = aiPlayer === Player.BLACK ? Player.WHITE : Player.BLACK;
+  const maxDepth = DEPTH_BY_DIFFICULTY[difficulty];
+  const randomTopN = RANDOM_TOP_N_BY_DIFFICULTY[difficulty];
+  const deadline = nowMs() + SEARCH_TIME_LIMIT_MS[difficulty];
+
+  const bestRanked = runIterativeDeepening(maxDepth, deadline, (depth) =>
+    getRankedRootMoves(board, depth, aiPlayer, opponent, deadline)
   );
-  return move || getValidMoves(board)[0];
+
+  if (bestRanked.length === 0) return getValidMoves(board)[0];
+
+  const pool = bestRanked.slice(0, Math.max(1, randomTopN));
+  const choice = pool[Math.floor(Math.random() * pool.length)];
+  return { row: choice.row, col: choice.col };
 }
