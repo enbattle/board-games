@@ -24,7 +24,11 @@ export function DifficultySelector() {
   };
 
   return (
-    <Tabs value={currentDifficulty} onValueChange={handleDifficultyChange}>
+    <Tabs
+      value={currentDifficulty}
+      onValueChange={handleDifficultyChange}
+      aria-label="AI difficulty"
+    >
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">AI Difficulty</h2>
         <TabsList>

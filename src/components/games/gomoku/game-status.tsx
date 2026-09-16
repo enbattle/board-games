@@ -87,10 +87,10 @@ export function GameStatus({ gameState, mode, isAIThinking }: GameStatusProps) {
             aria-live="polite"
             className={`rounded-md p-3 text-center font-medium ${
               gameState.winner
-                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+                ? "bg-success text-success-foreground animate-win-pulse"
                 : isAIThinking
-                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
-                : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
+                ? "bg-warning text-warning-foreground"
+                : "bg-info text-info-foreground"
             }`}
           >
             {getStatusMessage()}

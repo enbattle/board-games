@@ -32,6 +32,7 @@ export function GameModeSelector({ modes }: GameModeSelectorProps) {
       defaultValue={currentMode}
       className="w-full"
       onValueChange={handleModeChange}
+      aria-label="Game mode"
     >
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Game Mode</h2>

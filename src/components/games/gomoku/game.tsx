@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
 import { GomokuBoard } from "./board";
@@ -26,6 +26,19 @@ export function GomokuGame() {
   const difficulty: Difficulty = isDifficulty(difficultyParam)
     ? difficultyParam
     : "medium";
+
+  // Remounting on mode/difficulty change (rather than resetting state in an
+  // effect) gives every game instance a genuinely fresh initial render.
+  return <GomokuGameBoard key={`${mode}-${difficulty}`} mode={mode} difficulty={difficulty} />;
+}
+
+function GomokuGameBoard({
+  mode,
+  difficulty,
+}: {
+  mode: string;
+  difficulty: Difficulty;
+}) {
   const [isAIThinking, setIsAIThinking] = useState(false);
 
   const [gameState, setGameState] = useState<GameState>(initialGameState);
@@ -36,12 +49,6 @@ export function GomokuGame() {
       currentPlayer: Player.BLACK, // Always start with Black
     });
   }, []);
-
-  // Reset game when mode or difficulty changes
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    resetGame();
-  }, [mode, difficulty, resetGame]);
 
   const handleCellClick = useCallback(
     (row: number, col: number) => {

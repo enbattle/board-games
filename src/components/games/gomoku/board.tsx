@@ -127,7 +127,7 @@ export function GomokuBoard({
                   cell === Player.BLACK
                     ? "bg-gray-900 border border-gray-700"
                     : "bg-white border border-gray-300"
-                } ${isWinning ? "ring-2 ring-red-500" : ""} ${
+                } ${isWinning ? "ring-2 ring-red-500 animate-win-pulse" : ""} ${
                   isLast ? "ring-2 ring-blue-500" : ""
                 }`}
                 style={{
